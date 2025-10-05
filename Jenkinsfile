@@ -3,8 +3,7 @@ pipeline {
     
     environment {
         registry = "karna1312/devops-web-app"
-        registryCredential = "dockerhub-credentials"
-        dockerImage = ""
+        BUILD_TAG = "${env.BUILD_ID}"
     }
     
     stages {
@@ -18,21 +17,34 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "=== Building Docker image ==="
-                script {
-                    dockerImage = docker.build("${registry}:${env.BUILD_ID}")
-                }
+                bat """
+                    docker build -t ${registry}:${BUILD_TAG} .
+                    docker tag ${registry}:${BUILD_TAG} ${registry}:latest
+                """
                 echo "=== Image built successfully ==="
+            }
+        }
+        
+        stage('Verify Image') {
+            steps {
+                echo "=== Verifying Docker image ==="
+                bat """
+                    docker images | findstr ${registry}
+                    echo Image verified successfully!
+                """
             }
         }
         
         stage('Push to Docker Hub') {
             steps {
                 echo "=== Pushing image to Docker Hub ==="
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
-                        dockerImage.push("${env.BUILD_ID}")
-                        dockerImage.push('latest')
-                    }
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    bat """
+                        echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                        docker push ${registry}:${BUILD_TAG}
+                        docker push ${registry}:latest
+                        docker logout
+                    """
                 }
                 echo "=== Image pushed successfully ==="
             }
