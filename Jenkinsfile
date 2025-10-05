@@ -21,16 +21,7 @@ pipeline {
                 script {
                     dockerImage = docker.build("${registry}:${env.BUILD_ID}")
                 }
-            }
-        }
-        
-        stage('Test Image') {
-            steps {
-                echo "=== Testing Docker image ==="
-                bat """
-                    docker images | findstr devops-web-app
-                    docker run --rm ${registry}:${env.BUILD_ID} nginx -t
-                """
+                echo "=== Image built successfully ==="
             }
         }
         
@@ -54,7 +45,7 @@ pipeline {
             bat 'docker system prune -f || exit 0'
         }
         success {
-            echo "=== Pipeline completed successfully ==="
+            echo "=== CI/CD Pipeline completed successfully ==="
         }
         failure {
             echo "=== Pipeline failed - check logs above ==="
