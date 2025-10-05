@@ -1,4 +1,4 @@
-﻿pipeline {
+pipeline {
     agent any
     
     environment {
@@ -30,7 +30,6 @@
                 script {
                     dockerImage.inside {
                         bat 'echo "Container started successfully"'
-                        bat 'ls -la /usr/share/nginx/html/ || dir C:\\usr\\share\\nginx\\html\\ || echo "Files verified"'
                     }
                 }
             }
@@ -56,10 +55,10 @@
             bat 'docker system prune -f || exit 0'
         }
         success {
-            echo "=== ✅ Pipeline completed successfully ==="
+            echo "=== Pipeline completed successfully ==="
         }
         failure {
-            echo "=== ❌ Pipeline failed - check logs above ==="
+            echo "=== Pipeline failed - check logs above ==="
         }
     }
 }
