@@ -24,14 +24,13 @@ pipeline {
             }
         }
         
-        stage('Test Container') {
+        stage('Test Image') {
             steps {
-                echo "=== Testing container ==="
-                script {
-                    dockerImage.inside {
-                        bat 'echo "Container started successfully"'
-                    }
-                }
+                echo "=== Testing Docker image ==="
+                bat """
+                    docker images | findstr devops-web-app
+                    docker run --rm ${registry}:${env.BUILD_ID} nginx -t
+                """
             }
         }
         
