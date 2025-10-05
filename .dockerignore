@@ -1,0 +1,5 @@
+﻿jenkins.war
+.git
+.gitignore
+README.md
+*.log

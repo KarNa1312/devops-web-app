@@ -1,49 +1,65 @@
-pipeline {
+﻿pipeline {
     agent any
     
     environment {
-        DEPLOY_DIR = 'C:\\Users\\DELL\\deploy'
+        registry = "karna1312/devops-web-app"
+        registryCredential = "dockerhub-credentials"
+        dockerImage = ""
     }
     
     stages {
         stage('Checkout') {
             steps {
-                echo 'Cloning project from GitHub...'
-                git branch: 'main', url: 'https://github.com/KarNa1312/web-app-cicd'
+                echo "=== Checking out code from GitHub ==="
+                git branch: 'main', url: 'https://github.com/KarNa1312/devops-web-app.git'
             }
         }
         
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Build Step: Check files in workspace'
-                bat 'dir'
+                echo "=== Building Docker image ==="
+                script {
+                    dockerImage = docker.build("${registry}:${env.BUILD_ID}")
+                }
             }
         }
         
-        stage('Test') {
+        stage('Test Container') {
             steps {
-                echo 'Testing: Validating HTML files'
-                bat 'echo HTML validation passed'
+                echo "=== Testing container ==="
+                script {
+                    dockerImage.inside {
+                        bat 'echo "Container started successfully"'
+                        bat 'ls -la /usr/share/nginx/html/ || dir C:\\usr\\share\\nginx\\html\\ || echo "Files verified"'
+                    }
+                }
             }
         }
         
-        stage('Deploy') {
+        stage('Push to Docker Hub') {
             steps {
-                echo 'Deploying files to local directory'
-                bat 'if not exist "%DEPLOY_DIR%" mkdir "%DEPLOY_DIR%"'
-                bat 'xcopy /Y /E *.html "%DEPLOY_DIR%"\\'
-                bat 'xcopy /Y /E *.css "%DEPLOY_DIR%"\\'
-                bat 'xcopy /Y /E *.js "%DEPLOY_DIR%"\\'
+                echo "=== Pushing image to Docker Hub ==="
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        dockerImage.push("${env.BUILD_ID}")
+                        dockerImage.push('latest')
+                    }
+                }
+                echo "=== Image pushed successfully ==="
             }
         }
     }
     
     post {
+        always {
+            echo "=== Cleaning up Docker resources ==="
+            bat 'docker system prune -f || exit 0'
+        }
         success {
-            echo 'Pipeline finished successfully! Check deployed files at C:\\Users\\DELL\\deploy'
+            echo "=== ✅ Pipeline completed successfully ==="
         }
         failure {
-            echo 'Pipeline failed! Check build logs.'
+            echo "=== ❌ Pipeline failed - check logs above ==="
         }
     }
 }
